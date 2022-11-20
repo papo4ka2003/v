@@ -1,4 +1,4 @@
-# Hi there, We are [vfsramfs](https://daniilshat.ru/) ![](https://github.com/blackcater/blackcater/raw/main/images/Hi.gif) 
+# Hi there, We are [vfsramfs](https://vk.com/id248266536) ![](https://github.com/blackcater/blackcater/raw/main/images/Hi.gif) 
 ### Students of Moscow Aviation Institute
 
 
