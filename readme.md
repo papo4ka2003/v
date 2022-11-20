@@ -1,5 +1,5 @@
-# Hi there, I'm [Daniil](https://daniilshat.ru/) ![](https://github.com/blackcater/blackcater/raw/main/images/Hi.gif) 
-### Computer science student, IT news writer from Russia 🇷🇺
+# Hi there, We are [vfsramfs](https://daniilshat.ru/) ![](https://github.com/blackcater/blackcater/raw/main/images/Hi.gif) 
+### Students of Moscow Aviation Institute
 
 
 В папке mqtt_subscriber содержится программа в которой работает жесткая логика управления роботом через gpo. Реализовали json парсер команд для управления роботом.
