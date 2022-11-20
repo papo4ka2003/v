@@ -1,0 +1,124 @@
+"{\"cwd\":\"forward\",\"val\":\"4.5\"}"
+
+
+"{\"cwd\":\"auto\",\"markers_screen\":[{\"id\":\""3"\"},{\"id\":\""4"\"}]}"
+
+"{\"cwd\":\"auto\",\"markers_screen\":[{\"id\":\""3"\",\"x\":\"5\",\"y\":\"6\"},
+{\"id\":\""5"\",\"x\":\"8\",\"y\":\"6\"}],
+\"markers_floor\":[{\"id\":\""3"\",\"x\":\"5\",\"y\":\"6\"},
+{\"id\":\""5"\",\"x\":\"8\",\"y\":\"6\"}],
+\"targets_screen\":[{\"id\":\""3"\",\"x\":\"5\",\"y\":\"6\"},
+{\"id\":\""5"\",\"x\":\"8\",\"y\":\"6\"}],
+\"robot_screen\":[{\"id\":\""3"\",\"x\":\"5\",\"y\":\"6\"},
+{\"id\":\""5"\",\"x\":\"8\",\"y\":\"6\"}]}"
+
+
+
+BspError rc = BspInit(NULL);
+	if (rc != BSP_EOK) {
+		//fprintf(stderr, "Failed to initialize BSP\n");
+		return EXIT_FAILURE;
+	}
+    //fprintf(stderr, "Hello I'm server1\n");
+	rc = BspSetConfig(HW_MODULE_NAME, HW_MODULE_CFG);
+	if (rc != BSP_EOK) {
+		//fprintf(stderr, "Failed to set mux configuration for gpio0 module\n");
+		return EXIT_FAILURE;
+	}
+    //fprintf(stderr, "Hello I'm server2\n");
+	if (GpioInit()) {
+		//fprintf(stderr, "GpioInit failed\n");
+		return EXIT_FAILURE;
+	}
+
+
+
+
+
+
+
+if (ROOTFS_SDCARD)
+    set (ROOTFS_ENTITY "kl.VfsSdCardFs")
+    set (FS_BACKEND ${precompiled_vfsVfsSdCardFs})
+    list (APPEND ENTITIES ${precompiled_vfsVfsSdCardFs})
+else()
+    set (ROOTFS_ENTITY "kl.VfsRamFs")
+    set (FS_BACKEND ${precompiled_vfsVfsRamFs})
+    list (APPEND ENTITIES ${precompiled_vfsVfsRamFs})
+endif()
+
+set_target_properties(${FS_BACKEND} PROPERTIES
+    EXTRA_ARGS "\
+    - -l
+    - devfs /dev devfs 0")
+
+# Redefine the DHCPCD program connections.
+set_target_properties (${rump_DHCPCD_ENTITY} PROPERTIES
+    DEPENDS_ON_ENTITY ""
+    EXTRA_CONNECTIONS "\
+  - target: kl.VfsNet
+    id: kl.VfsNet
+  - target: ${ROOTFS_ENTITY}
+    id: ${ROOTFS_ENTITY}"
+    EXTRA_ENV "\
+    VFS_FILESYSTEM_BACKEND: client{fs->net}:${ROOTFS_ENTITY}
+    VFS_NETWORK_BACKEND: client:kl.VfsNet"
+    EXTRA_ARGS "\
+    - '-4'
+    - -f
+    - /etc/dhcpcd.conf")
+
+# Add a target for making and copying the disk image to the example build
+# directory.
+add_custom_command (OUTPUT ramdisk0.img
+                    COMMAND ${CMAKE_COMMAND} -E make_directory
+                        ${CMAKE_BINARY_DIR}/hdd
+                    COMMAND ${CMAKE_COMMAND} -E copy_directory
+                        ${CMAKE_SOURCE_DIR}/resources/ramfs
+                        ${CMAKE_BINARY_DIR}/hdd
+                    COMMAND $ENV{SDK_PREFIX}/common/prepare_hdd_img.sh -d
+                        ${CMAKE_BINARY_DIR}/hdd -img ramdisk0.img -f ext4 -s 128)
+add_custom_target (ramdisk0.img DEPENDS ramdisk0.img)
+
+# Add a target for making and copying the disk image to the example build
+# directory.
+add_custom_command (OUTPUT sdcard0.img
+                    COMMAND ${CMAKE_COMMAND} -E make_directory
+                        ${CMAKE_BINARY_DIR}/hdd
+                    COMMAND ${CMAKE_COMMAND} -E copy_directory
+                        ${CMAKE_SOURCE_DIR}/resources/sdcard
+                        ${CMAKE_BINARY_DIR}/hdd
+                    COMMAND $ENV{SDK_PREFIX}/common/prepare_hdd_img.sh -d
+                        ${CMAKE_BINARY_DIR}/hdd -img sdcard0.img -f fat32)
+add_custom_target (sdcard0.img DEPENDS sdcard0.img)
+
+set (QEMU_FLAGS "-sd sdcard0.img")
+set (SECURITY_PSL_FILE "src/security.psl")
+set (FILES ${CMAKE_BINARY_DIR}/einit/ramdisk0.img)
+build_kos_hw_image (kos-image
+                    EINIT_ENTITY EinitHw
+                    CONNECTIONS_CFG "src/init.yaml.in"
+                    SECURITY_PSL ${SECURITY_PSL_FILE}
+                    IMAGE_FILES  ${ENTITIES}
+                                 ${FILES})
+add_dependencies (kos-image ramdisk0.img)
+
+# KasperskyOS image for QEMU with simulation targets (sim, gdbsim, gdb).
+build_kos_qemu_image (kos-qemu-image
+                      EINIT_ENTITY EinitQemu
+                      CONNECTIONS_CFG "src/init.yaml.in"
+                      SECURITY_PSL ${SECURITY_PSL_FILE}
+                      QEMU_FLAGS   ${QEMU_FLAGS}
+                      IMAGE_FILES  ${ENTITIES}
+                                   ${CMAKE_BINARY_DIR}/einit/sdcard0.img
+                                   ${FILES})
+add_dependencies (kos-qemu-image ramdisk0.img sdcard0.img)
+
+set_target_properties (EinitHw PROPERTIES LINK_FLAGS ${VULN_LDFLAGS})
+set_target_properties (EinitQemu PROPERTIES LINK_FLAGS ${VULN_LDFLAGS})
+
+
+
+
+
+
