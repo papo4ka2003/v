@@ -23,7 +23,7 @@
 ## Инструкции по запуску
 ![image](https://user-images.githubusercontent.com/117864353/202908165-75ee9150-b18a-426f-b159-dae33a7762d3.png)
 
-forward - движение вперед
-back    - движение назад
-left    - поворот влево 
-right   - поворот вправо
+forward - движение вперед\
+back    - движение назад\
+left    - поворот влево \
+right   - поворот вправо\
